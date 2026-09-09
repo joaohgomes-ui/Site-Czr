@@ -1,0 +1,214 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f4f7f6;
+  color: #333;
+  padding: 20px;
+}
+
+.container {
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+header h1 {
+  color: #0b2545;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+header p {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .calculator-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  font-size: 1.05rem;
+  color: #0b2545;
+  border-bottom: 2px solid #134074;
+  padding-bottom: 6px;
+  margin-top: 18px;
+  margin-bottom: 12px;
+}
+
+.card h2:first-child {
+  margin-top: 0;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #134074;
+}
+
+.form-group input, 
+.form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.form-group input:focus, 
+.form-group select:focus {
+  outline: none;
+  border-color: #0b2545;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #f26419;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 15px;
+}
+
+button:hover {
+  background-color: #d9530f;
+}
+
+.results-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-box {
+  background-color: #ffebee;
+  border: 1px solid #ef5350;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.result-item.highlight {
+  background-color: #eef4f8;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.result-item.highlight-taxado {
+  background-color: #e3f2fd;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.result-item.highlight-veiculos {
+  background-color: #fff3e0;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.result-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.result-value {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #134074;
+  text-align: right;
+}
+
+.important-box {
+  margin-top: 12px;
+  margin-bottom: 15px;
+  background-color: #fff8e7;
+  border-left: 4px solid #f26419;
+  padding: 10px 12px;
+  border-radius: 4px;
+}
+
+.important-box h3 {
+  font-size: 0.88rem;
+  color: #b34700;
+  margin-bottom: 4px;
+}
+
+.important-box p {
+  font-size: 0.82rem;
+  color: #444;
+  line-height: 1.35;
+}
+
+.freite-final-box {
+  margin-top: auto;
+  background-color: #2e7d32;
+  color: #ffffff;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(46, 125, 50, 0.2);
+}
+
+.freite-final-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  opacity: 0.9;
+}
+
+.freite-final-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+}

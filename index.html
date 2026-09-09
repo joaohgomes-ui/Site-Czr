@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora Profissional de Cubagem e Frete</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Sistema de Cotacao de Frete e Cubagem</h1>
+      <p>Cálculo preciso de cubagem, rota e valor total do frete baseado em peso, distância e quantidade de veículos.</p>
+    </header>
+
+    <div class="calculator-grid">
+      <div class="card form-card">
+        
+        <h2>1. Identificação do Cliente e Carga</h2>
+        <div class="form-group">
+          <label for="nome-cliente">Nome do Cliente / Empresa:</label>
+          <input type="text" id="nome-cliente" placeholder="Ex: João Silva ou Empresa XYZ">
+        </div>
+
+        <div class="form-group">
+          <label for="descricao-carga">Descrição do Material / Produto:</label>
+          <input type="text" id="descricao-carga" placeholder="Ex: Caixas de papelão com eletrodomésticos">
+        </div>
+
+        <div class="form-group">
+          <label for="categoria-carga">Categoria da Carga:</label>
+          <select id="categoria-carga">
+            <option value="geral">Carga Geral / Seca (Permitido)</option>
+            <option value="refrigerada">Carga Refrigerada / Perecível (Permitido)</option>
+            <option value="fragil">Carga Frágil (Permitido)</option>
+            <option value="proibida">PROIBIDO: Químicos Perigosos / Explosivos / Inflamáveis</option>
+            <option value="restrita">RESTRITO: Carga Viva / Armamentos / Valores</option>
+          </select>
+        </div>
+
+        <h2>2. Origem, Destino e Rota</h2>
+        <div class="form-group">
+          <label for="origem">Origem (Cidade/UF):</label>
+          <input type="text" id="origem" placeholder="Ex: Alagoinhas - BA">
+        </div>
+
+        <div class="form-group">
+          <label for="destino">Destino (Cidade/UF):</label>
+          <input type="text" id="destino" placeholder="Ex: Salvador - BA">
+        </div>
+
+        <div class="form-group">
+          <label for="distancia-ida">Distância de Ida (km):</label>
+          <input type="number" id="distancia-ida" min="1" placeholder="Ex: 15">
+        </div>
+
+        <h2>3. Dimensões e Peso da Carga</h2>
+        <div class="form-group">
+          <label for="comprimento">Comprimento por Caixa/Item (m):</label>
+          <input type="number" id="comprimento" step="0.01" placeholder="Ex: 0.30">
+        </div>
+
+        <div class="form-group">
+          <label for="largura">Largura por Caixa/Item (m):</label>
+          <input type="number" id="largura" step="0.01" placeholder="Ex: 0.30">
+        </div>
+
+        <div class="form-group">
+          <label for="altura">Altura por Caixa/Item (m):</label>
+          <input type="number" id="altura" step="0.01" placeholder="Ex: 0.30">
+        </div>
+
+        <div class="form-group">
+          <label for="quantidade">Quantidade de Itens (Unidades):</label>
+          <input type="number" id="quantidade" value="1" min="1" placeholder="Ex: 10000">
+        </div>
+
+        <div class="form-group">
+          <label for="modal">Fator Modal de Transporte:</label>
+          <select id="modal">
+            <option value="300">Rodoviário (Fator 300)</option>
+            <option value="167">Aéreo (Fator 167)</option>
+            <option value="1000">Marítimo (Fator 1000)</option>
+            <option value="custom">Outro Fator Personalizado</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="custom-fator-group" style="display: none;">
+          <label for="fator-custom">Fator Personalizado:</label>
+          <input type="number" id="fator-custom" placeholder="Ex: 250">
+        </div>
+
+        <div class="form-group">
+          <label for="peso-bruto-total">Peso Bruto TOTAL da Carga (kg) [Opcional]:</label>
+          <input type="number" id="peso-bruto-total" step="0.1" placeholder="Ex: 5000">
+        </div>
+
+        <button type="button" id="btn-calcular">Calcular Frete Final</button>
+      </div>
+
+      <div class="card results-card">
+        <h2>Resumo da Cotação</h2>
+
+        <div id="alert-proibido" class="alert-box" style="display: none;">
+          ⚠️ <strong>ATENÇÃO:</strong> Esta categoria de carga NÃO pode ser transportada ou necessita de autorização especial prévia!
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Cliente:</span>
+          <span class="result-value" id="res-cliente">---</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Carga / Material:</span>
+          <span class="result-value" id="res-material">---</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Rota:</span>
+          <span class="result-value" id="res-rota">---</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Distância (Ida / Total):</span>
+          <span class="result-value" id="res-distancia">0 km / 0 km</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Tarifa Base Tabela:</span>
+          <span class="result-value" id="res-tarifa-km">R$ 0,00 / km</span>
+        </div>
+
+        <div class="result-item">
+          <span class="result-label">Cubagem Unitária / Total:</span>
+          <span class="result-value" id="res-volume">0.000 m³ / 0.000 m³</span>
+        </div>
+
+        <div class="result-item highlight">
+          <span class="result-label">Peso Cubado Total:</span>
+          <span class="result-value" id="res-peso-cubado-total">0.00 kg</span>
+        </div>
+
+        <div class="result-item highlight-taxado">
+          <span class="result-label">Peso Taxado para Cobrança:</span>
+          <span class="result-value" id="res-peso-taxado">0.00 kg</span>
+        </div>
+
+        <div class="result-item highlight-veiculos">
+          <span class="result-label">Nº Estimado de Veículos/Viagens:</span>
+          <span class="result-value" id="res-veiculos">1 viagem(ns)</span>
+        </div>
+
+        <div class="important-box" id="taxation-box">
+          <h3>Regra de Cálculo Aplicada</h3>
+          <p id="taxation-text">Insira os dados do cliente e da carga para gerar o cálculo.</p>
+        </div>
+
+        <div class="freite-final-box">
+          <span class="freite-final-title">VALOR TOTAL DO FRETE</span>
+          <span class="freite-final-value" id="res-custo-frete">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
