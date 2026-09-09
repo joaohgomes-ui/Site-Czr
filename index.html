@@ -10,11 +10,16 @@
 
   <div class="container">
     <header>
-      <h1>Sistema de Cotacao de Frete e Cubagem</h1>
+      <div class="header-top">
+        <h1>Sistema de Cotação de Frete e Cubagem</h1>
+        <!-- Botão de Troca de Tema -->
+        <button type="button" id="toggle-theme" class="btn-theme">🌙 Modo Escuro</button>
+      </div>
       <p>Cálculo preciso de cubagem, rota e valor total do frete baseado em peso, distância e quantidade de veículos.</p>
     </header>
 
     <div class="calculator-grid">
+      <!-- Formulário de Entradas -->
       <div class="card form-card">
         
         <h2>1. Identificação do Cliente e Carga</h2>
@@ -99,9 +104,11 @@
         <button type="button" id="btn-calcular">Calcular Frete Final</button>
       </div>
 
+      <!-- Card de Resultados -->
       <div class="card results-card">
         <h2>Resumo da Cotação</h2>
 
+        <!-- Alerta de Carga Proibida -->
         <div id="alert-proibido" class="alert-box" style="display: none;">
           ⚠️ <strong>ATENÇÃO:</strong> Esta categoria de carga NÃO pode ser transportada ou necessita de autorização especial prévia!
         </div>
@@ -156,6 +163,7 @@
           <p id="taxation-text">Insira os dados do cliente e da carga para gerar o cálculo.</p>
         </div>
 
+        <!-- VALOR DO FRETE EM DESTAQUE NO FINAL -->
         <div class="freite-final-box">
           <span class="freite-final-title">VALOR TOTAL DO FRETE</span>
           <span class="freite-final-value" id="res-custo-frete">R$ 0,00</span>

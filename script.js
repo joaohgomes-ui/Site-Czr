@@ -3,7 +3,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const customGroup = document.getElementById('custom-fator-group');
   const btnCalcular = document.getElementById('btn-calcular');
   const alertBox = document.getElementById('alert-proibido');
+  const btnToggleTheme = document.getElementById('toggle-theme');
 
+  // FUNCIONALIDADE DO MODO ESCURO / MODO CLARO
+  btnToggleTheme.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    
+    if (document.body.classList.contains('dark-mode')) {
+      btnToggleTheme.textContent = '☀️ Modo Claro';
+    } else {
+      btnToggleTheme.textContent = '🌙 Modo Escuro';
+    }
+  });
+
+  // Capacidade máxima por veículo padrão (ex: Truck ~ 12.000 kg)
   const CAPACIDADE_MAX_VEICULO_KG = 12000;
 
   selectModal.addEventListener('change', () => {
@@ -14,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Tabela de tarifa por km (Ida)
   function obterTarifaKm(distanciaIda) {
     if (distanciaIda <= 50) return 6.00;
     if (distanciaIda <= 100) return 5.50;
@@ -22,11 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (distanciaIda <= 500) return 4.00;
     if (distanciaIda <= 700) return 3.70;
     if (distanciaIda <= 1000) return 3.40;
-    return 3.00;
+    return 3.00; // Acima de 1000 km
   }
 
   btnCalcular.addEventListener('click', () => {
-
+    // 1. Cliente e Carga
     const nomeCliente = document.getElementById('nome-cliente').value.trim() || 'Não informado';
     const descricaoCarga = document.getElementById('descricao-carga').value.trim() || 'Não informada';
     const categoriaCarga = document.getElementById('categoria-carga').value;
@@ -37,10 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
       alertBox.style.display = 'none';
     }
 
+    // 2. Rota
     const origem = document.getElementById('origem').value.trim();
     const destino = document.getElementById('destino').value.trim();
     const distanciaIda = parseFloat(document.getElementById('distancia-ida').value) || 0;
 
+    // 3. Dimensões e Peso
     const comprimento = parseFloat(document.getElementById('comprimento').value) || 0;
     const largura = parseFloat(document.getElementById('largura').value) || 0;
     const altura = parseFloat(document.getElementById('altura').value) || 0;
@@ -64,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // CÁLCULOS
     const volumeUnitario = comprimento * largura * altura;
     const volumeTotal = volumeUnitario * quantidade;
 
@@ -71,15 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const pesoCubadoTotal = pesoCubadoUnitario * quantidade;
 
     const pesoTaxado = Math.max(pesoBrutoTotal, pesoCubadoTotal);
-
     const numVeiculos = Math.max(1, Math.ceil(pesoTaxado / CAPACIDADE_MAX_VEICULO_KG));
 
     const distanciaTotalPorViagem = distanciaIda * 2;
     const tarifaPorKm = obterTarifaKm(distanciaIda);
     const custoDistanciaBase = distanciaTotalPorViagem * tarifaPorKm;
-
     const custoFreteTotal = custoDistanciaBase * numVeiculos;
 
+    // INTERFACE
     document.getElementById('res-cliente').textContent = nomeCliente;
     document.getElementById('res-material').textContent = descricaoCarga;
     
@@ -102,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let textoRegra = `Carga taxada pelo <strong>PESO CUBADO (${pesoCubadoTotal.toFixed(2)} kg)</strong> devido ao volume de ${volumeTotal.toFixed(2)} m³.<br>`;
     
     if (numVeiculos > 1) {
-      textoRegra += `Devido ao volume/peso elevado, o transporte exigirá <strong>${numVeiculos} veículos/viagens</strong>. O valor do frete foi calculado considerando o custo de R$ ${custoDistanciaBase.toFixed(2)} x ${numVeiculos} viagens.`;
+      textoRegra += `Devido ao volume/peso elevado, o transporte exigirá <strong>${numVeiculos} veículos/viagens</strong>. O valor do frete foi calculado considerando R$ ${custoDistanciaBase.toFixed(2)} x ${numVeiculos} viagens.`;
     } else {
       textoRegra += `A carga cabe em 1 veículo padrão. Custo calculado em R$ ${tarifaPorKm.toFixed(2)}/km sobre a distância total (Ida+Volta).`;
     }
