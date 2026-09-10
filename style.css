@@ -1,45 +1,35 @@
-/* --- VARIÁVEIS DE TEMA --- */
 :root {
   --bg-color: #f4f7f6;
-  --text-color: #333333;
+  --text-color: #2b2b2b;
   --card-bg: #ffffff;
   --card-shadow: rgba(0, 0, 0, 0.08);
-  --title-color: #0b2545;
-  --border-title: #134074;
-  --label-color: #134074;
+  --primary-color: #0b2545;
+  --accent-color: #f26419;
+  --accent-hover: #d9530f;
+  --border-color: #dddddd;
   --input-bg: #ffffff;
-  --input-border: #cccccc;
-  --input-text: #333333;
-  --item-border: #eeeeee;
+  --label-color: #134074;
   --highlight-bg: #eef4f8;
-  --highlight-taxado-bg: #e3f2fd;
-  --highlight-veiculos-bg: #fff3e0;
-  --important-bg: #fff8e7;
-  --important-border: #f26419;
-  --important-title: #b34700;
-  --important-text: #444444;
+  --alert-bg: #ffebee;
+  --alert-border: #ef5350;
+  --alert-text: #c62828;
 }
 
-/* TEMA ESCURO (DARK MODE) */
 body.dark-mode {
   --bg-color: #121212;
   --text-color: #e0e0e0;
   --card-bg: #1e1e1e;
   --card-shadow: rgba(0, 0, 0, 0.5);
-  --title-color: #64b5f6;
-  --border-title: #2196f3;
-  --label-color: #90caf9;
+  --primary-color: #64b5f6;
+  --accent-color: #ff9800;
+  --accent-hover: #f57c00;
+  --border-color: #333333;
   --input-bg: #2d2d2d;
-  --input-border: #444444;
-  --input-text: #ffffff;
-  --item-border: #333333;
+  --label-color: #90caf9;
   --highlight-bg: #1a2634;
-  --highlight-taxado-bg: #152938;
-  --highlight-veiculos-bg: #33271a;
-  --important-bg: #2c2219;
-  --important-border: #ff9800;
-  --important-title: #ffb74d;
-  --important-text: #e0e0e0;
+  --alert-bg: #3e1919;
+  --alert-border: #f44336;
+  --alert-text: #ff8a80;
 }
 
 * {
@@ -47,7 +37,7 @@ body.dark-mode {
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 body {
@@ -57,52 +47,29 @@ body {
 }
 
 .container {
-  max-width: 950px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 header {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 header h1 {
-  color: var(--title-color);
-  text-transform: uppercase;
-  font-size: 1.5rem;
+  color: var(--primary-color);
+  font-size: 1.6rem;
 }
 
 header p {
-  color: var(--text-color);
-  font-size: 0.95rem;
-  margin-top: 5px;
   opacity: 0.8;
-}
-
-/* BOTÃO DE TEMA */
-.btn-theme {
-  padding: 8px 14px;
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  border: 1px solid var(--input-border);
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  box-shadow: 0 2px 5px var(--card-shadow);
-  width: auto;
-  margin-top: 0;
-}
-
-.btn-theme:hover {
-  background-color: var(--highlight-bg);
+  font-size: 0.95rem;
+  margin-top: 4px;
 }
 
 .calculator-grid {
@@ -126,10 +93,10 @@ header p {
 
 .card h2 {
   font-size: 1.05rem;
-  color: var(--title-color);
-  border-bottom: 2px solid var(--border-title);
-  padding-bottom: 6px;
-  margin-top: 18px;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 4px;
+  margin-top: 15px;
   margin-bottom: 12px;
 }
 
@@ -138,159 +105,171 @@ header p {
 }
 
 .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.form-group label {
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   margin-bottom: 4px;
   color: var(--label-color);
 }
 
-.form-group input, 
-.form-group select {
+input {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--input-border);
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   background-color: var(--input-bg);
-  color: var(--input-text);
-  border-radius: 4px;
-  font-size: 0.95rem;
+  color: var(--text-color);
+  font-size: 0.9rem;
 }
 
-.form-group input:focus, 
-.form-group select:focus {
+input:focus {
   outline: none;
-  border-color: var(--title-color);
+  border-color: var(--primary-color);
 }
 
-button#btn-calcular {
-  width: 100%;
-  padding: 12px;
-  background-color: #f26419;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+.action-buttons {
+  display: flex;
+  gap: 10px;
   margin-top: 15px;
 }
 
-button#btn-calcular:hover {
-  background-color: #d9530f;
-}
-
-.results-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.alert-box {
-  background-color: #ffebee;
-  border: 1px solid #ef5350;
-  color: #c62828;
-  padding: 12px;
+button {
+  flex: 1;
+  padding: 10px;
+  border: none;
   border-radius: 4px;
-  font-size: 0.85rem;
-  margin-bottom: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
-body.dark-mode .alert-box {
-  background-color: #3e1919;
-  border-color: #f44336;
-  color: #ff8a80;
+.btn-primary {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.btn-info {
+  background-color: #134074;
+  color: white;
+  margin-top: 4px;
+}
+
+.btn-info:hover {
+  background-color: #0b2545;
+}
+
+.btn-danger {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #b71c1c;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 6px 12px;
+  border-radius: 15px;
+}
+
+#status-distancia {
+  font-size: 0.75rem;
+  color: #1b5e20;
+  font-weight: normal;
+  margin-left: 5px;
+}
+
+.alert-box-error {
+  background-color: var(--alert-bg);
+  border: 1px solid var(--alert-border);
+  color: var(--alert-text);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 0.88rem;
+}
+
+.alert-box-error ul {
+  margin-left: 20px;
+  margin-top: 5px;
+}
+
+.result-section {
+  margin-bottom: 15px;
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 8px;
+}
+
+.result-section h3 {
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  margin-bottom: 6px;
 }
 
 .result-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--item-border);
-}
-
-.result-item.highlight {
-  background-color: var(--highlight-bg);
-  padding: 8px 10px;
-  border-radius: 4px;
-  margin-top: 4px;
-}
-
-.result-item.highlight-taxado {
-  background-color: var(--highlight-taxado-bg);
-  padding: 8px 10px;
-  border-radius: 4px;
-  margin-top: 4px;
-}
-
-.result-item.highlight-veiculos {
-  background-color: var(--highlight-veiculos-bg);
-  padding: 8px 10px;
-  border-radius: 4px;
-  margin-top: 4px;
-}
-
-.result-label {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.result-value {
-  font-weight: bold;
-  font-size: 0.95rem;
-  color: var(--title-color);
-  text-align: right;
-}
-
-.important-box {
-  margin-top: 12px;
-  margin-bottom: 15px;
-  background-color: var(--important-bg);
-  border-left: 4px solid var(--important-border);
-  padding: 10px 12px;
-  border-radius: 4px;
-}
-
-.important-box h3 {
-  font-size: 0.88rem;
-  color: var(--important-title);
   margin-bottom: 4px;
 }
 
-.important-box p {
-  font-size: 0.82rem;
-  color: var(--important-text);
-  line-height: 1.35;
+.highlight-box {
+  background-color: var(--highlight-bg);
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
 }
 
-/* CAIXA DE EMISSÃO DO FRETE FINAL */
-.freite-final-box {
-  margin-top: auto;
+.bold {
+  font-weight: bold;
+}
+
+.criterio-tag {
+  font-size: 0.78rem;
+  font-weight: bold;
+  color: #2e7d32;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.total-box {
   background-color: #2e7d32;
-  color: #ffffff;
-  padding: 15px;
+  color: white;
+  padding: 12px;
   border-radius: 6px;
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-top: auto;
 }
 
-.freite-final-title {
+.total-title {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: bold;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin-bottom: 5px;
-  opacity: 0.9;
+  letter-spacing: 0.5px;
 }
 
-.freite-final-value {
+.total-value {
   display: block;
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 1.8rem;
+  font-weight: bold;
 }
