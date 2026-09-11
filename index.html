@@ -5,167 +5,237 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calculadora de Frete Rodoviário - SENAI</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
-  <div class="container">
-    <header>
-      <div class="header-top">
-        <h1>Calculadora de Frete Rodoviário</h1>
-        <button type="button" id="btn-theme" class="btn-secondary">🌙 Modo Escuro</button>
-      </div>
-      <p>Cotação com cálculo automático de distância entre cidades via GPS (OSRM / OpenStreetMap).</p>
+  <div class="app-container">
+    
+    <!-- Cabeçalho Institucional SENAI -->
+    <header class="header">
+      <div class="header-badge">SENAI - Programador Web</div>
+      <h1>Calculadora de Frete Rodoviário</h1>
+      <p class="subtitle">Linguagem de Desenvolvimento Web | Docente: Cezar Oliveira</p>
+      <button type="button" id="btn-theme" class="btn-theme">🌙 Modo Escuro</button>
     </header>
 
-    <div id="box-erros" class="alert-box-error" style="display: none;"></div>
-
-    <div class="calculator-grid">
-      <form id="frete-form" class="card form-card" onsubmit="return false;">
-        
-        <h2>1. Identificação do Cliente e Rota</h2>
-        <div class="form-group">
-          <label for="nome-cliente">Nome / Razão Social do Cliente *</label>
-          <input type="text" id="nome-cliente" placeholder="Ex: Logística Bahia Ltda">
-        </div>
-
-        <div class="form-row">
+    <!-- Formulário Principal -->
+    <form id="frete-form" onsubmit="return false;">
+      
+      <!-- Seção 1: Dados do Cliente e Carga -->
+      <div class="card">
+        <h2 class="card-title"><span class="icon">👤</span> 1. Dados do Cliente e Rota</h2>
+        <div class="grid-2">
+          <div class="form-group span-2">
+            <label for="nome-cliente">Nome / Razão Social do Cliente *</label>
+            <input type="text" id="nome-cliente" placeholder="Ex: Transportes & Logística Silva Ltda" required>
+          </div>
+          
           <div class="form-group">
             <label for="cidade-origem">Cidade de Origem *</label>
-            <input type="text" id="cidade-origem" placeholder="Ex: Alagoinhas">
+            <input type="text" id="cidade-origem" placeholder="Ex: Salvador - BA" required>
           </div>
+          
           <div class="form-group">
             <label for="cidade-destino">Cidade de Destino *</label>
-            <input type="text" id="cidade-destino" placeholder="Ex: Salvador">
+            <input type="text" id="cidade-destino" placeholder="Ex: Feira de Santana - BA" required>
           </div>
-        </div>
 
-        <div class="form-group">
-          <button type="button" id="btn-buscar-distancia" class="btn-info">🔍 Calcular Distância Automática</button>
-        </div>
+          <div class="form-group">
+            <label for="distancia">Distância Estimada (km) *</label>
+            <div class="input-with-button">
+              <input type="number" id="distancia" step="any" min="0" placeholder="Ex: 110" required>
+              <button type="button" id="btn-buscar-distancia" class="btn-secondary" title="Buscar via GPS (Opcional)">📡 GPS</button>
+            </div>
+            <span id="status-distancia" class="status-msg"></span>
+          </div>
 
-        <div class="form-group">
-          <label for="distancia">Distância Estimada (km) * <span id="status-distancia"></span></label>
-          <input type="number" id="distancia" min="1" step="0.1" placeholder="Informe as cidades acima ou digite aqui">
-        </div>
-
-        <h2>2. Dados da Carga e Mercadoria</h2>
-        <div class="form-row">
           <div class="form-group">
             <label for="descricao-carga">Descrição da Mercadoria *</label>
-            <input type="text" id="descricao-carga" placeholder="Ex: Bebidas / Alimentos">
+            <input type="text" id="descricao-carga" placeholder="Ex: Caixas de peças automotivas" required>
           </div>
-          <div class="form-group">
+
+          <div class="form-group span-2">
             <label for="valor-nf">Valor da Nota Fiscal (R$) *</label>
-            <input type="number" id="valor-nf" min="0.01" step="0.01" placeholder="Ex: 15000.00">
+            <input type="number" id="valor-nf" step="any" min="0" placeholder="Ex: 15000.00" required>
           </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="quantidade-volumes">Qtd. de Volumes *</label>
-            <input type="number" id="quantidade-volumes" min="1" value="10" placeholder="Ex: 10">
-          </div>
-          <div class="form-group">
-            <label for="peso-real">Peso Real Total (kg) *</label>
-            <input type="number" id="peso-real" min="0.1" step="0.1" placeholder="Ex: 250">
-          </div>
-        </div>
-
-        <div class="form-row dims">
-          <div class="form-group">
-            <label for="comprimento">Comprimento (m) *</label>
-            <input type="number" id="comprimento" step="0.01" min="0.01" value="0.50">
-          </div>
-          <div class="form-group">
-            <label for="largura">Largura (m) *</label>
-            <input type="number" id="largura" step="0.01" min="0.01" value="0.40">
-          </div>
-          <div class="form-group">
-            <label for="altura">Altura (m) *</label>
-            <input type="number" id="altura" step="0.01" min="0.01" value="0.30">
-          </div>
-        </div>
-
-        <h2>3. Parâmetros e Taxas Adicionais</h2>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tarifa-kg">Tarifa Base por kg (R$/kg) *</label>
-            <input type="number" id="tarifa-kg" step="0.01" min="0.01" value="0.80">
-          </div>
-          <div class="form-group">
-            <label for="frete-minimo">Frete Mínimo (R$) *</label>
-            <input type="number" id="frete-minimo" step="0.01" min="0.00" value="150.00">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="perc-advalorem">Ad Valorem (%)</label>
-            <input type="number" id="perc-advalorem" step="0.01" min="0" value="0.30">
-          </div>
-          <div class="form-group">
-            <label for="perc-gris">GRIS (%)</label>
-            <input type="number" id="perc-gris" step="0.01" min="0" value="0.15">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pedagio">Pedágio (R$)</label>
-            <input type="number" id="pedagio" step="0.01" min="0" value="25.00">
-          </div>
-          <div class="form-group">
-            <label for="outras-taxas">Outras Taxas (R$)</label>
-            <input type="number" id="outras-taxas" step="0.01" min="0" value="15.00">
-          </div>
-        </div>
-
-        <div class="action-buttons">
-          <button type="button" id="btn-calcular" class="btn-primary">Calcular Cotação</button>
-          <button type="button" id="btn-limpar" class="btn-danger">Limpar Dados</button>
-        </div>
-      </form>
-
-      <div class="card results-card">
-        <h2>Resumo da Cotação & Memória de Cálculo</h2>
-
-        <div class="result-section">
-          <h3>Identificação e Rota</h3>
-          <div class="result-item"><span class="label">Cliente:</span><span id="res-cliente" class="val">---</span></div>
-          <div class="result-item"><span class="label">Origem / Destino:</span><span id="res-rota" class="val">---</span></div>
-          <div class="result-item"><span class="label">Distância Rota:</span><span id="res-distancia" class="val">0 km</span></div>
-          <div class="result-item"><span class="label">Mercadoria:</span><span id="res-mercadoria" class="val">---</span></div>
-          <div class="result-item"><span class="label">Valor NF:</span><span id="res-valor-nf" class="val">R$ 0,00</span></div>
-        </div>
-
-        <div class="result-section">
-          <h3>Análise de Peso e Cubagem (Fator 300)</h3>
-          <div class="result-item"><span class="label">Volume Total:</span><span id="res-volume" class="val">0,000 m³</span></div>
-          <div class="result-item"><span class="label">Peso Real Total:</span><span id="res-peso-real" class="val">0,00 kg</span></div>
-          <div class="result-item"><span class="label">Peso Cubado:</span><span id="res-peso-cubado" class="val">0,00 kg</span></div>
-          <div class="result-item highlight-box">
-            <span class="label">Peso Considerado p/ Cobrança:</span>
-            <span id="res-peso-cobranca" class="val bold">0,00 kg</span>
-          </div>
-          <div class="criterio-tag" id="res-criterio-peso">Critério: Aguardando dados</div>
-        </div>
-
-        <div class="result-section">
-          <h3>Composição do Valor do Frete</h3>
-          <div class="result-item"><span class="label">Frete-Peso Calculado:</span><span id="res-frete-peso" class="val">R$ 0,00</span></div>
-          <div class="result-item"><span class="label">Frete Mínimo Aplicado?</span><span id="res-frete-minimo-aplicado" class="val">Não</span></div>
-          <div class="result-item"><span class="label">Ad Valorem (Seguro):</span><span id="res-advalorem" class="val">R$ 0,00</span></div>
-          <div class="result-item"><span class="label">GRIS (Gerenciamento Risco):</span><span id="res-gris" class="val">R$ 0,00</span></div>
-          <div class="result-item"><span class="label">Pedágio:</span><span id="res-pedagio" class="val">R$ 0,00</span></div>
-          <div class="result-item"><span class="label">Outras Taxas / Despacho:</span><span id="res-outras-taxas" class="val">R$ 0,00</span></div>
-        </div>
-
-        <div class="total-box">
-          <span class="total-title">VALOR TOTAL DA COTAÇÃO</span>
-          <span id="res-total-frete" class="total-value">R$ 0,00</span>
         </div>
       </div>
-    </div>
+
+      <!-- Seção 2: Especificações da Carga (Cubagem) -->
+      <div class="card">
+        <h2 class="card-title"><span class="icon">📦</span> 2. Especificações da Carga (Volumes e Dimensões)</h2>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="quantidade-volumes">Quantidade de Volumes *</label>
+            <input type="number" id="quantidade-volumes" min="1" value="1" placeholder="Ex: 10" required>
+          </div>
+
+          <div class="form-group">
+            <label for="peso-real">Peso Real Total (kg) *</label>
+            <input type="number" id="peso-real" step="any" min="0" placeholder="Ex: 450.5" required>
+          </div>
+
+          <div class="form-group">
+            <label for="comprimento">Comprimento por Volume (m) *</label>
+            <input type="number" id="comprimento" step="any" min="0" placeholder="Ex: 1.20" required>
+          </div>
+
+          <div class="form-group">
+            <label for="largura">Largura por Volume (m) *</label>
+            <input type="number" id="largura" step="any" min="0" placeholder="Ex: 0.80" required>
+          </div>
+
+          <div class="form-group span-2">
+            <label for="altura">Altura por Volume (m) *</label>
+            <input type="number" id="altura" step="any" min="0" placeholder="Ex: 1.00" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 3: Parâmetros e Taxas Adicionais -->
+      <div class="card">
+        <h2 class="card-title"><span class="icon">⚙️</span> 3. Parâmetros e Taxas Adicionais</h2>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="tarifa-kg">Tarifa Base por kg (R$/kg) *</label>
+            <input type="number" id="tarifa-kg" step="any" min="0" placeholder="Ex: 0.80" required>
+          </div>
+
+          <div class="form-group">
+            <label for="frete-minimo">Frete Mínimo (R$) *</label>
+            <input type="number" id="frete-minimo" step="any" min="0" placeholder="Ex: 150.00" value="0">
+          </div>
+
+          <div class="form-group">
+            <label for="perc-advalorem">Ad Valorem (%)</label>
+            <input type="number" id="perc-advalorem" step="any" min="0" placeholder="Ex: 0.30" value="0">
+          </div>
+
+          <div class="form-group">
+            <label for="perc-gris">GRIS (%)</label>
+            <input type="number" id="perc-gris" step="any" min="0" placeholder="Ex: 0.15" value="0">
+          </div>
+
+          <div class="form-group">
+            <label for="pedagio">Pedágio (R$)</label>
+            <input type="number" id="pedagio" step="any" min="0" placeholder="Ex: 25.00" value="0">
+          </div>
+
+          <div class="form-group">
+            <label for="outras-taxas">Outras Taxas (R$)</label>
+            <input type="number" id="outras-taxas" step="any" min="0" placeholder="Ex: 15.00" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Botões de Ação -->
+      <div class="actions-bar">
+        <button type="button" id="btn-calcular" class="btn-primary">🧮 Calcular Cotação</button>
+        <button type="button" id="btn-limpar" class="btn-danger">🗑️ Limpar Dados</button>
+      </div>
+
+      <!-- Box de Validação de Erros -->
+      <div id="box-erros" class="alert-box" style="display: none;"></div>
+    </form>
+
+    <!-- Seção 4: Memória de Cálculo / Resultado -->
+    <section class="card result-card" id="secao-resultado">
+      <h2 class="card-title"><span class="icon">📄</span> 4. Resultado da Cotação / Memória de Cálculo</h2>
+      
+      <div class="resumo-grid">
+        <div class="resumo-item">
+          <span class="label">Cliente:</span>
+          <strong id="res-cliente">---</strong>
+        </div>
+        <div class="resumo-item">
+          <span class="label">Rota:</span>
+          <strong id="res-rota">---</strong>
+        </div>
+        <div class="resumo-item">
+          <span class="label">Distância:</span>
+          <strong id="res-distancia">0 km</strong>
+        </div>
+        <div class="resumo-item">
+          <span class="label">Mercadoria:</span>
+          <strong id="res-mercadoria">---</strong>
+        </div>
+        <div class="resumo-item span-2">
+          <span class="label">Valor NF:</span>
+          <strong id="res-valor-nf">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <table class="tabela-calculo">
+        <thead>
+          <tr>
+            <th>Descrição do Item / Parâmetro</th>
+            <th>Valor Calculado / Critério</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Volume Total da Carga</td>
+            <td id="res-volume">0,000 m³</td>
+          </tr>
+          <tr>
+            <td>Peso Real Total</td>
+            <td id="res-peso-real">0,00 kg</td>
+          </tr>
+          <tr>
+            <td>Peso Cubado (Fator 300 kg/m³)</td>
+            <td id="res-peso-cubado">0,00 kg</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><strong>Peso Considerado para Cobrança</strong></td>
+            <td><strong id="res-peso-cobranca">0,00 kg</strong></td>
+          </tr>
+          <tr>
+            <td><em>Critério de Peso Aplicado</em></td>
+            <td><em id="res-criterio-peso">Aguardando dados...</em></td>
+          </tr>
+          <tr>
+            <td>Frete-Peso Bruto</td>
+            <td id="res-frete-peso">R$ 0,00</td>
+          </tr>
+          <tr>
+            <td>Aplicação de Frete Mínimo</td>
+            <td id="res-frete-minimo-aplicado">Não</td>
+          </tr>
+          <tr>
+            <td>Ad Valorem (Seguro)</td>
+            <td id="res-advalorem">R$ 0,00</td>
+          </tr>
+          <tr>
+            <td>GRIS (Gerenciamento de Risco)</td>
+            <td id="res-gris">R$ 0,00</td>
+          </tr>
+          <tr>
+            <td>Pedágio</td>
+            <td id="res-pedagio">R$ 0,00</td>
+          </tr>
+          <tr>
+            <td>Outras Taxas</td>
+            <td id="res-outras-taxas">R$ 0,00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Totalizador de Destaque -->
+      <div class="total-box">
+        <span>VALOR TOTAL DO FRETE:</span>
+        <h3 id="res-total-frete">R$ 0,00</h3>
+      </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer class="footer">
+      <p>Projeto Avaliativo - SENAI Programador Web | Calculadora de Frete Rodoviário</p>
+    </footer>
+
   </div>
 
   <script src="script.js"></script>

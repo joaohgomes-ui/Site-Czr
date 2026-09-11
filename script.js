@@ -1,14 +1,16 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const FATOR_CUBAGEM_RODOVIARIO = 300;
+/* JavaScript - Calculadora de Frete Rodoviário SENAI */
 
-  // 1. Libera todos os campos numéricos da página para aceitarem qualquer precisão decimal (ex: 0.3012)
+document.addEventListener('DOMContentLoaded', () => {
+  const FATOR_CUBAGEM_RODOVIARIO = 300; // 300 kg por m³ (padrão rodoviário)
+
+  // 1. Injeta 'step="any"' em todos os inputs do tipo number para aceitar decimais longos (ex: 0.3012)
   document.querySelectorAll('input[type="number"]').forEach(input => {
     input.setAttribute('step', 'any');
   });
 
-  // Função auxiliar flexível para encontrar elementos por múltiplos IDs possíveis
-  function findElement(possibleIds) {
-    const list = Array.isArray(possibleIds) ? possibleIds : [possibleIds];
+  // Função auxiliar para buscar elementos por múltiplos IDs
+  function findElement(ids) {
+    const list = Array.isArray(ids) ? ids : [ids];
     for (const id of list) {
       const el = document.getElementById(id);
       if (el) return el;
@@ -16,35 +18,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
-  // Converte texto em número tratando vírgulas e aceitando decimais longos
-  function parseNum(possibleIds) {
-    const el = findElement(possibleIds);
-    if (!el || el.value === null || el.value === undefined || el.value === '') return 0;
+  // Função para ler números tratando vírgula brasileira
+  function parseNum(ids) {
+    const el = findElement(ids);
+    if (!el || el.value === null || el.value === undefined || el.value.trim() === '') return 0;
     const valLimpo = el.value.toString().replace(/\s/g, '').replace(',', '.');
     const num = parseFloat(valLimpo);
     return isNaN(num) ? 0 : num;
   }
 
-  function getTexto(possibleIds) {
-    const el = findElement(possibleIds);
+  // Função para ler texto dos campos
+  function getTexto(ids) {
+    const el = findElement(ids);
     return el ? el.value.trim() : '';
   }
 
-  // 2. ESCUTA GLOBAL: Captura qualquer alteração em QUALQUER campo da tela em tempo real
-  // Funciona ao digitar, ao colar ou ao clicar nas setas de subir/descer números
-  document.addEventListener('input', (e) => {
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
-      executarCalculoCotacao(false);
-    }
-  });
-
-  document.addEventListener('change', (e) => {
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
-      executarCalculoCotacao(false);
-    }
-  });
-
-  // Mapeamento dos Botões da Tela
+  // Mapeamento dos elementos principais
   const btnCalcular = findElement(['btn-calcular', 'btnCalcular']);
   const btnLimpar = findElement(['btn-limpar', 'btnLimpar']);
   const btnTheme = findElement(['btn-theme', 'btnTheme']);
@@ -52,8 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const boxErros = findElement(['box-erros', 'boxErros']);
   const statusDistancia = findElement(['status-distancia', 'statusDistancia']);
 
-  if (btnBuscarDistancia) btnBuscarDistancia.addEventListener('click', buscarDistanciaGPS);
-
+  // Modo escuro
   if (btnTheme) {
     btnTheme.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
@@ -61,44 +49,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (btnCalcular) btnCalcular.addEventListener('click', () => executarCalculoCotacao(true));
+  // Evento dos Botões Principais
+  if (btnCalcular) btnCalcular.addEventListener('click', () => executarCalculo(true));
   if (btnLimpar) btnLimpar.addEventListener('click', limparFormulario);
+  if (btnBuscarDistancia) btnBuscarDistancia.addEventListener('click', buscarDistanciaGPS);
 
-  // Leitura blindada de todas as seções (com fallback para variações de IDs no HTML)
+  // 2. ESCUTA EM TEMPO REAL: Atualiza a tabela dinamicamente enquanto o usuário digita
+  document.addEventListener('input', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+      executarCalculo(false);
+    }
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+      executarCalculo(false);
+    }
+  });
+
+  // Leitura centralizada de todos os campos
   function lerEntradasFormulario() {
     return {
-      nomeCliente: getTexto(['nome-cliente', 'nome_cliente', 'cliente']),
-      cidadeOrigem: getTexto(['cidade-origem', 'cidade_origem', 'origem']),
-      cidadeDestino: getTexto(['cidade-destino', 'cidade_destino', 'destino']),
-      distancia: parseNum(['distancia', 'distancia-km', 'distancia_km']),
-      descricaoCarga: getTexto(['descricao-carga', 'descricao_carga', 'mercadoria']),
-      valorNF: parseNum(['valor-nf', 'valor_nf', 'valornf', 'valor-nota']),
-      quantidade: parseNum(['quantidade-volumes', 'quantidade_volumes', 'quantidade', 'volumes']) || 1,
-      pesoReal: parseNum(['peso-real', 'peso_real', 'pesoreal', 'peso']),
-      comprimento: parseNum(['comprimento', 'comp']),
-      largura: parseNum(['largura', 'larg']),
-      altura: parseNum(['altura', 'alt']),
-
-      // SEÇÃO 3: PARÂMETROS E TAXAS ADICIONAIS
-      tarifaKg: parseNum(['tarifa-kg', 'tarifa_kg', 'tarifakg', 'tarifa']),
-      freteMinimo: parseNum(['frete-minimo', 'frete_minimo', 'freteminimo']),
-      percAdValorem: parseNum(['perc-advalorem', 'perc_advalorem', 'advalorem', 'ad-valorem']),
-      percGris: parseNum(['perc-gris', 'perc_gris', 'gris']),
-      pedagio: parseNum(['pedagio', 'valor-pedagio', 'pedagio_valor']),
-      outrasTaxas: parseNum(['outras-taxas', 'outras_taxas', 'outrastaxas', 'taxas-adicionais'])
+      nomeCliente: getTexto(['nome-cliente', 'nome_cliente']),
+      cidadeOrigem: getTexto(['cidade-origem', 'cidade_origem']),
+      cidadeDestino: getTexto(['cidade-destino', 'cidade_destino']),
+      distancia: parseNum(['distancia', 'distancia-km']),
+      descricaoCarga: getTexto(['descricao-carga', 'descricao_carga']),
+      valorNF: parseNum(['valor-nf', 'valor_nf']),
+      quantidade: parseNum(['quantidade-volumes', 'quantidade_volumes']) || 1,
+      pesoReal: parseNum(['peso-real', 'peso_real']),
+      comprimento: parseNum(['comprimento']),
+      largura: parseNum(['largura']),
+      altura: parseNum(['altura']),
+      tarifaKg: parseNum(['tarifa-kg', 'tarifa_kg']),
+      freteMinimo: parseNum(['frete-minimo', 'frete_minimo']),
+      percAdValorem: parseNum(['perc-advalorem', 'perc_advalorem']),
+      percGris: parseNum(['perc-gris', 'perc_gris']),
+      pedagio: parseNum(['pedagio']),
+      outrasTaxas: parseNum(['outras-taxas', 'outras_taxas'])
     };
   }
 
-  // Execução do Cálculo e Atualização Instantânea da Tabela
-  function executarCalculoCotacao(mostrarErros = true) {
-    if (mostrarErros && boxErros) {
+  // Execução do cálculo
+  function executarCalculo(mostrarAlertas = true) {
+    if (mostrarAlertas && boxErros) {
       boxErros.style.display = 'none';
       boxErros.innerHTML = '';
     }
 
     const entradas = lerEntradasFormulario();
 
-    if (mostrarErros) {
+    if (mostrarAlertas) {
       const erros = validarEntradas(entradas);
       if (erros.length > 0) {
         exibirErrosValidacao(erros);
@@ -106,27 +107,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Cálculos Principais
     const cubagem = calcularCubagem(entradas.comprimento, entradas.largura, entradas.altura, entradas.quantidade);
     const analisePeso = determinarPesoCobranca(entradas.pesoReal, cubagem.pesoCubado);
-    
     const freteCalculado = calcularFretePeso(analisePeso.pesoCobranca, entradas.tarifaKg, entradas.distancia, entradas.freteMinimo);
     const taxas = calcularTaxasAdicionais(entradas.valorNF, entradas.percAdValorem, entradas.percGris, entradas.pedagio, entradas.outrasTaxas);
 
     const valorTotalFrete = freteCalculado.freteAplicado + taxas.totalTaxas;
 
+    // Atualiza a tabela na tela
     exibirMemoriaDeCalculo(entradas, cubagem, analisePeso, freteCalculado, taxas, valorTotalFrete);
   }
 
+  // Validação estrita para quando o usuário clica no botão "Calcular Cotação"
   function validarEntradas(dados) {
     const erros = [];
-    if (!dados.nomeCliente) erros.push('Preencha o Nome / Razão Social do cliente.');
+    if (!dados.nomeCliente) erros.push('Informe o Nome / Razão Social do cliente.');
     if (!dados.cidadeOrigem) erros.push('Informe a cidade de Origem.');
     if (!dados.cidadeDestino) erros.push('Informe a cidade de Destino.');
-    if (dados.distancia <= 0) erros.push('Informe uma distância em km válida.');
+    if (dados.distancia <= 0) erros.push('Informe uma distância válida maior que zero (km).');
+    if (!dados.descricaoCarga) erros.push('Informe a descrição da mercadoria.');
     if (dados.valorNF <= 0) erros.push('O valor da Nota Fiscal deve ser maior que zero.');
-    if (dados.pesoReal <= 0) erros.push('O peso real da carga deve ser maior que zero.');
+    if (dados.quantidade <= 0) erros.push('A quantidade de volumes deve ser no mínimo 1.');
+    if (dados.pesoReal <= 0) erros.push('O peso real total deve ser maior que zero.');
     if (dados.comprimento <= 0 || dados.largura <= 0 || dados.altura <= 0) {
-      erros.push('Informe dimensões válidas (comprimento, largura e altura).');
+      erros.push('Informe dimensões válidas maiores que zero (comprimento, largura e altura).');
     }
     if (dados.tarifaKg <= 0) erros.push('A tarifa base por kg deve ser maior que zero.');
     return erros;
@@ -134,13 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function exibirErrosValidacao(erros) {
     if (!boxErros) return;
-    let html = '<strong>Por favor, corrija os seguintes problemas:</strong><ul>';
+    let html = '<strong>Por favor, corrija os seguintes itens para prosseguir:</strong><ul>';
     erros.forEach(erro => html += `<li>${erro}</li>`);
     html += '</ul>';
     boxErros.innerHTML = html;
     boxErros.style.display = 'block';
   }
 
+  // Fórmulas SENAI
   function calcularCubagem(comprimento, largura, altura, quantidade) {
     const volumeUnitario = comprimento * largura * altura;
     const volumeTotal = volumeUnitario * quantidade;
@@ -182,72 +188,45 @@ document.addEventListener('DOMContentLoaded', () => {
     return (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  function setTxt(possibleIds, texto) {
-    const el = findElement(possibleIds);
+  function setTxt(ids, texto) {
+    const el = findElement(ids);
     if (el) el.textContent = texto;
   }
 
   function exibirMemoriaDeCalculo(entradas, cubagem, analisePeso, freteCalculado, taxas, valorTotalFrete) {
-    setTxt(['res-cliente', 'res_cliente'], entradas.nomeCliente || '---');
-    setTxt(['res-rota', 'res_rota'], `${entradas.cidadeOrigem || '---'} ➔ ${entradas.cidadeDestino || '---'}`);
-    setTxt(['res-distancia', 'res_distancia'], `${entradas.distancia} km`);
-    setTxt(['res-mercadoria', 'res_mercadoria'], `${entradas.descricaoCarga || '---'} (${entradas.quantidade} vol.)`);
-    setTxt(['res-valor-nf', 'res_valor_nf'], formatarMoeda(entradas.valorNF));
+    setTxt(['res-cliente'], entradas.nomeCliente || '---');
+    setTxt(['res-rota'], `${entradas.cidadeOrigem || '---'} ➔ ${entradas.cidadeDestino || '---'}`);
+    setTxt(['res-distancia'], `${entradas.distancia} km`);
+    setTxt(['res-mercadoria'], `${entradas.descricaoCarga || '---'} (${entradas.quantidade} vol.)`);
+    setTxt(['res-valor-nf'], formatarMoeda(entradas.valorNF));
 
-    setTxt(['res-volume', 'res_volume'], `${cubagem.volumeTotal.toFixed(3)} m³`);
-    setTxt(['res-peso-real', 'res_peso_real'], `${entradas.pesoReal.toFixed(2)} kg`);
-    setTxt(['res-peso-cubado', 'res_peso_cubado'], `${cubagem.pesoCubado.toFixed(2)} kg`);
-    setTxt(['res-peso-cobranca', 'res-peso-cobrança', 'res_peso_cobranca'], `${analisePeso.pesoCobranca.toFixed(2)} kg`);
+    setTxt(['res-volume'], `${cubagem.volumeTotal.toFixed(3)} m³`);
+    setTxt(['res-peso-real'], `${entradas.pesoReal.toFixed(2)} kg`);
+    setTxt(['res-peso-cubado'], `${cubagem.pesoCubado.toFixed(2)} kg`);
+    setTxt(['res-peso-cobranca'], `${analisePeso.pesoCobranca.toFixed(2)} kg`);
 
-    setTxt(['res-criterio-peso', 'res_criterio_peso'], `Critério Aplicado: ${analisePeso.criterio}`);
+    setTxt(['res-criterio-peso'], analisePeso.criterio);
 
-    setTxt(['res-frete-peso', 'res_frete_peso'], formatarMoeda(freteCalculado.fretePesoBruto));
-    setTxt(['res-frete-minimo-aplicado', 'res_frete_minimo_aplicado'], freteCalculado.usouFreteMinimo ? `Sim (${formatarMoeda(freteCalculado.freteAplicado)})` : 'Não');
+    setTxt(['res-frete-peso'], formatarMoeda(freteCalculado.fretePesoBruto));
+    setTxt(['res-frete-minimo-aplicado'], freteCalculado.usouFreteMinimo ? `Sim (${formatarMoeda(freteCalculado.freteAplicado)})` : 'Não');
     
-    setTxt(['res-advalorem', 'res_advalorem', 'res-ad-valorem'], formatarMoeda(taxas.valorAdValorem));
-    setTxt(['res-gris', 'res_gris'], formatarMoeda(taxas.valorGris));
-    setTxt(['res-pedagio', 'res_pedagio'], formatarMoeda(taxas.pedagio));
-    setTxt(['res-outras-taxas', 'res_outras_taxas'], formatarMoeda(taxas.outrasTaxas));
+    setTxt(['res-advalorem'], formatarMoeda(taxas.valorAdValorem));
+    setTxt(['res-gris'], formatarMoeda(taxas.valorGris));
+    setTxt(['res-pedagio'], formatarMoeda(taxas.pedagio));
+    setTxt(['res-outras-taxas'], formatarMoeda(taxas.outrasTaxas));
 
-    setTxt(['res-total-frete', 'res_total_frete'], formatarMoeda(valorTotalFrete));
+    setTxt(['res-total-frete'], formatarMoeda(valorTotalFrete));
   }
 
-  // BUSCA GPS
-  async function buscarCoordenadas(cidade) {
-    const nome = cidade.trim();
-    try {
-      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(nome)}&count=5&language=pt&format=json`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          const br = data.results.find(r => r.country_code === 'BR') || data.results[0];
-          return { lat: parseFloat(br.latitude), lon: parseFloat(br.longitude) };
-        }
-      }
-    } catch (e) {}
-
-    try {
-      const q = nome.toLowerCase().includes('brasil') ? nome : `${nome}, Brasil`;
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.length > 0) {
-          return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-        }
-      }
-    } catch (e) {}
-
-    throw new Error(`Não foi possível localizar a cidade "${cidade}".`);
-  }
-
+  // GPS Opcional (Não trava caso não seja usado)
   async function buscarDistanciaGPS() {
-    const orig = getTexto(['cidade-origem', 'cidade_origem']);
-    const dest = getTexto(['cidade-destino', 'cidade_destino']);
-    const inputDistancia = findElement(['distancia', 'distancia-km']);
+    const orig = getTexto(['cidade-origem']);
+    const dest = getTexto(['cidade-destino']);
+    const inputDist = findElement(['distancia']);
 
     if (!orig || !dest) {
       if (statusDistancia) {
-        statusDistancia.textContent = "⚠️ Informe origem e destino";
+        statusDistancia.textContent = "⚠️ Informe origem e destino primeiro.";
         statusDistancia.style.color = "#c62828";
       }
       return;
@@ -259,75 +238,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const cOrig = await buscarCoordenadas(orig);
-      const cDest = await buscarCoordenadas(dest);
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(orig)}&count=1&language=pt&format=json`);
+      const dataOrig = await res.json();
+      const resDest = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(dest)}&count=1&language=pt&format=json`);
+      const dataDest = await resDest.json();
 
-      let km = null;
-      try {
-        const resOSRM = await fetch(`https://router.project-osrm.org/route/v1/driving/${cOrig.lon},${cOrig.lat};${cDest.lon},${cDest.lat}?overview=false`);
-        if (resOSRM.ok) {
-          const dataOSRM = await resOSRM.json();
-          if (dataOSRM.routes && dataOSRM.routes.length > 0) {
-            km = (dataOSRM.routes[0].distance / 1000).toFixed(1);
-            if (statusDistancia) {
-              statusDistancia.textContent = "✔ Distância obtida via GPS";
-              statusDistancia.style.color = "#2e7d32";
-            }
+      if (dataOrig.results && dataDest.results) {
+        const lat1 = dataOrig.results[0].latitude;
+        const lon1 = dataOrig.results[0].longitude;
+        const lat2 = dataDest.results[0].latitude;
+        const lon2 = dataDest.results[0].longitude;
+
+        const resOSRM = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
+        const dataOSRM = await resOSRM.json();
+
+        if (dataOSRM.routes && dataOSRM.routes.length > 0) {
+          const km = (dataOSRM.routes[0].distance / 1000).toFixed(1);
+          if (inputDist) inputDist.value = km;
+          if (statusDistancia) {
+            statusDistancia.textContent = "✔ Distância obtida via GPS";
+            statusDistancia.style.color = "#2e7d32";
           }
-        }
-      } catch (e) {}
-
-      if (!km) {
-        const R = 6371;
-        const dLat = (cDest.lat - cOrig.lat) * Math.PI / 180;
-        const dLon = (cDest.lon - cOrig.lon) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                  Math.cos(cOrig.lat * Math.PI / 180) * Math.cos(cDest.lat * Math.PI / 180) *
-                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        km = (R * c * 1.27).toFixed(1);
-        if (statusDistancia) {
-          statusDistancia.textContent = "✔ Distância estimada por coordenadas";
-          statusDistancia.style.color = "#2e7d32";
+          executarCalculo(false);
+          return;
         }
       }
-
-      if (inputDistancia) inputDistancia.value = km;
-      executarCalculoCotacao(false);
-
-    } catch (erro) {
+      throw new Error("Rota não encontrada");
+    } catch (e) {
       if (statusDistancia) {
-        statusDistancia.textContent = `❌ ${erro.message || 'Digite a distância manualmente'}`;
+        statusDistancia.textContent = "❌ Não foi possível buscar o GPS. Digite os km manualmente.";
         statusDistancia.style.color = "#c62828";
       }
     }
   }
 
   function limparFormulario() {
-    const form = findElement(['frete-form', 'freteForm']);
+    const form = findElement(['frete-form']);
     if (form) form.reset();
     if (statusDistancia) statusDistancia.textContent = '';
     if (boxErros) boxErros.style.display = 'none';
 
-    setTxt(['res-cliente', 'res_cliente'], '---');
-    setTxt(['res-rota', 'res_rota'], '---');
-    setTxt(['res-distancia', 'res_distancia'], '0 km');
-    setTxt(['res-mercadoria', 'res_mercadoria'], '---');
-    setTxt(['res-valor-nf', 'res_valor_nf'], 'R$ 0,00');
+    setTxt(['res-cliente'], '---');
+    setTxt(['res-rota'], '---');
+    setTxt(['res-distancia'], '0 km');
+    setTxt(['res-mercadoria'], '---');
+    setTxt(['res-valor-nf'], 'R$ 0,00');
 
-    setTxt(['res-volume', 'res_volume'], '0,000 m³');
-    setTxt(['res-peso-real', 'res_peso_real'], '0,00 kg');
-    setTxt(['res-peso-cubado', 'res_peso_cubado'], '0,00 kg');
-    setTxt(['res-peso-cobranca', 'res-peso-cobrança', 'res_peso_cobranca'], '0,00 kg');
+    setTxt(['res-volume'], '0,000 m³');
+    setTxt(['res-peso-real'], '0,00 kg');
+    setTxt(['res-peso-cubado'], '0,00 kg');
+    setTxt(['res-peso-cobranca'], '0,00 kg');
 
-    setTxt(['res-criterio-peso', 'res_criterio_peso'], 'Critério: Aguardando dados');
+    setTxt(['res-criterio-peso'], 'Aguardando dados...');
 
-    setTxt(['res-frete-peso', 'res_frete_peso'], 'R$ 0,00');
-    setTxt(['res-frete-minimo-aplicado', 'res_frete_minimo_aplicado'], 'Não');
-    setTxt(['res-advalorem', 'res_advalorem'], 'R$ 0,00');
-    setTxt(['res-gris', 'res_gris'], 'R$ 0,00');
-    setTxt(['res-pedagio', 'res_pedagio'], 'R$ 0,00');
-    setTxt(['res-outras-taxas', 'res_outras_taxas'], 'R$ 0,00');
-    setTxt(['res-total-frete', 'res_total_frete'], 'R$ 0,00');
+    setTxt(['res-frete-peso'], 'R$ 0,00');
+    setTxt(['res-frete-minimo-aplicado'], 'Não');
+    setTxt(['res-advalorem'], 'R$ 0,00');
+    setTxt(['res-gris'], 'R$ 0,00');
+    setTxt(['res-pedagio'], 'R$ 0,00');
+    setTxt(['res-outras-taxas'], 'R$ 0,00');
+    setTxt(['res-total-frete'], 'R$ 0,00');
   }
 });
