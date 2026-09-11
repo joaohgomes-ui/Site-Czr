@@ -1,152 +1,168 @@
-/* JavaScript - Calculadora de Frete Rodoviário SENAI */
-
 document.addEventListener('DOMContentLoaded', () => {
-  const FATOR_CUBAGEM_RODOVIARIO = 300; // 300 kg por m³ (padrão rodoviário)
+  const FATOR_CUBAGEM_RODOVIARIO = 300;
 
-  // 1. Injeta 'step="any"' em todos os inputs do tipo number para aceitar decimais longos (ex: 0.3012)
-  document.querySelectorAll('input[type="number"]').forEach(input => {
-    input.setAttribute('step', 'any');
-  });
+  // Elementos do DOM
+  const inputOrigem = document.getElementById('cidade-origem');
+  const inputDestino = document.getElementById('cidade-destino');
+  const inputDistancia = document.getElementById('distancia');
+  const btnBuscarDistancia = document.getElementById('btn-buscar-distancia');
+  const statusDistancia = document.getElementById('status-distancia');
 
-  // Função auxiliar para buscar elementos por múltiplos IDs
-  function findElement(ids) {
-    const list = Array.isArray(ids) ? ids : [ids];
-    for (const id of list) {
-      const el = document.getElementById(id);
-      if (el) return el;
-    }
-    return null;
-  }
+  const btnCalcular = document.getElementById('btn-calcular');
+  const btnLimpar = document.getElementById('btn-limpar');
+  const btnTheme = document.getElementById('btn-theme');
+  const boxErros = document.getElementById('box-erros');
 
-  // Função para ler números tratando vírgula brasileira
-  function parseNum(ids) {
-    const el = findElement(ids);
-    if (!el || el.value === null || el.value === undefined || el.value.trim() === '') return 0;
-    const valLimpo = el.value.toString().replace(/\s/g, '').replace(',', '.');
-    const num = parseFloat(valLimpo);
-    return isNaN(num) ? 0 : num;
-  }
-
-  // Função para ler texto dos campos
-  function getTexto(ids) {
-    const el = findElement(ids);
-    return el ? el.value.trim() : '';
-  }
-
-  // Mapeamento dos elementos principais
-  const btnCalcular = findElement(['btn-calcular', 'btnCalcular']);
-  const btnLimpar = findElement(['btn-limpar', 'btnLimpar']);
-  const btnTheme = findElement(['btn-theme', 'btnTheme']);
-  const btnBuscarDistancia = findElement(['btn-buscar-distancia', 'btnBuscarDistancia']);
-  const boxErros = findElement(['box-erros', 'boxErros']);
-  const statusDistancia = findElement(['status-distancia', 'statusDistancia']);
+  // Eventos de Busca de Distância
+  btnBuscarDistancia.addEventListener('click', buscarDistanciaGPS);
+  inputOrigem.addEventListener('blur', testarBuscaAutomatica);
+  inputDestino.addEventListener('blur', testarBuscaAutomatica);
 
   // Modo escuro
-  if (btnTheme) {
-    btnTheme.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      btnTheme.textContent = document.body.classList.contains('dark-mode') ? '☀️ Modo Claro' : '🌙 Modo Escuro';
-    });
-  }
-
-  // Evento dos Botões Principais
-  if (btnCalcular) btnCalcular.addEventListener('click', () => executarCalculo(true));
-  if (btnLimpar) btnLimpar.addEventListener('click', limparFormulario);
-  if (btnBuscarDistancia) btnBuscarDistancia.addEventListener('click', buscarDistanciaGPS);
-
-  // 2. ESCUTA EM TEMPO REAL: Atualiza a tabela dinamicamente enquanto o usuário digita
-  document.addEventListener('input', (e) => {
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
-      executarCalculo(false);
-    }
+  btnTheme.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    btnTheme.textContent = document.body.classList.contains('dark-mode') ? '☀️ Modo Claro' : '🌙 Modo Escuro';
   });
 
-  document.addEventListener('change', (e) => {
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
-      executarCalculo(false);
-    }
-  });
+  btnCalcular.addEventListener('click', executarCalculoCotacao);
+  btnLimpar.addEventListener('click', limparFormulario);
 
-  // Leitura centralizada de todos os campos
-  function lerEntradasFormulario() {
-    return {
-      nomeCliente: getTexto(['nome-cliente', 'nome_cliente']),
-      cidadeOrigem: getTexto(['cidade-origem', 'cidade_origem']),
-      cidadeDestino: getTexto(['cidade-destino', 'cidade_destino']),
-      distancia: parseNum(['distancia', 'distancia-km']),
-      descricaoCarga: getTexto(['descricao-carga', 'descricao_carga']),
-      valorNF: parseNum(['valor-nf', 'valor_nf']),
-      quantidade: parseNum(['quantidade-volumes', 'quantidade_volumes']) || 1,
-      pesoReal: parseNum(['peso-real', 'peso_real']),
-      comprimento: parseNum(['comprimento']),
-      largura: parseNum(['largura']),
-      altura: parseNum(['altura']),
-      tarifaKg: parseNum(['tarifa-kg', 'tarifa_kg']),
-      freteMinimo: parseNum(['frete-minimo', 'frete_minimo']),
-      percAdValorem: parseNum(['perc-advalorem', 'perc_advalorem']),
-      percGris: parseNum(['perc-gris', 'perc_gris']),
-      pedagio: parseNum(['pedagio']),
-      outrasTaxas: parseNum(['outras-taxas', 'outras_taxas'])
-    };
+  function testarBuscaAutomatica() {
+    if (inputOrigem.value.trim().length > 2 && inputDestino.value.trim().length > 2) {
+      buscarDistanciaGPS();
+    }
   }
 
-  // Execução do cálculo
-  function executarCalculo(mostrarAlertas = true) {
-    if (mostrarAlertas && boxErros) {
-      boxErros.style.display = 'none';
-      boxErros.innerHTML = '';
+  // Integração com Nominatim (Geocoding) e OSRM (Roteamento)
+  async function buscarDistanciaGPS() {
+    const orig = inputOrigem.value.trim();
+    const dest = inputDestino.value.trim();
+
+    if (!orig || !dest) {
+      statusDistancia.textContent = "(Informe a origem e o destino)";
+      statusDistancia.style.color = "#c62828";
+      return;
     }
+
+    statusDistancia.textContent = "⌛ Buscando rota via GPS...";
+    statusDistancia.style.color = "#0b2545";
+
+    try {
+      // 1. Busca coordenadas geográficas da Cidade de Origem
+      const respOrig = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(orig + ', Bahia, Brasil')}`);
+      const dataOrig = await respOrig.json();
+
+      // 2. Busca coordenadas geográficas da Cidade de Destino
+      const respDest = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dest + ', Bahia, Brasil')}`);
+      const dataDest = await respDest.json();
+
+      if (!dataOrig || dataOrig.length === 0) {
+        throw new Error(`Cidade de origem "${orig}" não foi localizada.`);
+      }
+      if (!dataDest || dataDest.length === 0) {
+        throw new Error(`Cidade de destino "${dest}" não foi localizada.`);
+      }
+
+      const lon1 = dataOrig[0].lon;
+      const lat1 = dataOrig[0].lat;
+      const lon2 = dataDest[0].lon;
+      const lat2 = dataDest[0].lat;
+
+      // 3. Consulta a API OSRM para calcular a distância rodoviária exata
+      const respRota = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
+      const dataRota = await respRota.json();
+
+      if (dataRota.routes && dataRota.routes.length > 0) {
+        const metros = dataRota.routes[0].distance;
+        const km = (metros / 1000).toFixed(1);
+        
+        inputDistancia.value = km;
+        statusDistancia.textContent = "✔ Distância obtida via GPS";
+        statusDistancia.style.color = "#2e7d32";
+      } else {
+        throw new Error("Não foi possível calcular a rota rodoviária entre essas cidades.");
+      }
+
+    } catch (erro) {
+      console.error(erro);
+      statusDistancia.textContent = "❌ Erro ao buscar GPS. Digite a distância manualmente.";
+      statusDistancia.style.color = "#c62828";
+    }
+  }
+
+  function executarCalculoCotacao() {
+    boxErros.style.display = 'none';
+    boxErros.innerHTML = '';
 
     const entradas = lerEntradasFormulario();
 
-    if (mostrarAlertas) {
-      const erros = validarEntradas(entradas);
-      if (erros.length > 0) {
-        exibirErrosValidacao(erros);
-        return;
-      }
+    const erros = validarEntradas(entradas);
+    if (erros.length > 0) {
+      exibirErrosValidacao(erros);
+      return;
     }
 
-    // Cálculos Principais
     const cubagem = calcularCubagem(entradas.comprimento, entradas.largura, entradas.altura, entradas.quantidade);
     const analisePeso = determinarPesoCobranca(entradas.pesoReal, cubagem.pesoCubado);
-    const freteCalculado = calcularFretePeso(analisePeso.pesoCobranca, entradas.tarifaKg, entradas.distancia, entradas.freteMinimo);
+    const freteCalculado = calcularFretePeso(analisePeso.pesoCobranca, entradas.tarifaKg, entradas.freteMinimo);
     const taxas = calcularTaxasAdicionais(entradas.valorNF, entradas.percAdValorem, entradas.percGris, entradas.pedagio, entradas.outrasTaxas);
 
     const valorTotalFrete = freteCalculado.freteAplicado + taxas.totalTaxas;
 
-    // Atualiza a tabela na tela
     exibirMemoriaDeCalculo(entradas, cubagem, analisePeso, freteCalculado, taxas, valorTotalFrete);
   }
 
-  // Validação estrita para quando o usuário clica no botão "Calcular Cotação"
+  function lerEntradasFormulario() {
+    return {
+      nomeCliente: document.getElementById('nome-cliente').value.trim(),
+      cidadeOrigem: inputOrigem.value.trim(),
+      cidadeDestino: inputDestino.value.trim(),
+      distancia: parseFloat(inputDistancia.value),
+      descricaoCarga: document.getElementById('descricao-carga').value.trim(),
+      valorNF: parseFloat(document.getElementById('valor-nf').value),
+      quantidade: parseInt(document.getElementById('quantidade-volumes').value),
+      pesoReal: parseFloat(document.getElementById('peso-real').value),
+      comprimento: parseFloat(document.getElementById('comprimento').value),
+      largura: parseFloat(document.getElementById('largura').value),
+      altura: parseFloat(document.getElementById('altura').value),
+      tarifaKg: parseFloat(document.getElementById('tarifa-kg').value),
+      freteMinimo: parseFloat(document.getElementById('frete-minimo').value) || 0,
+      percAdValorem: parseFloat(document.getElementById('perc-advalorem').value) || 0,
+      percGris: parseFloat(document.getElementById('perc-gris').value) || 0,
+      pedagio: parseFloat(document.getElementById('pedagio').value) || 0,
+      outrasTaxas: parseFloat(document.getElementById('outras-taxas').value) || 0
+    };
+  }
+
   function validarEntradas(dados) {
     const erros = [];
-    if (!dados.nomeCliente) erros.push('Informe o Nome / Razão Social do cliente.');
+
+    if (!dados.nomeCliente) erros.push('Preencha o Nome / Razão Social do cliente.');
     if (!dados.cidadeOrigem) erros.push('Informe a cidade de Origem.');
     if (!dados.cidadeDestino) erros.push('Informe a cidade de Destino.');
-    if (dados.distancia <= 0) erros.push('Informe uma distância válida maior que zero (km).');
     if (!dados.descricaoCarga) erros.push('Informe a descrição da mercadoria.');
-    if (dados.valorNF <= 0) erros.push('O valor da Nota Fiscal deve ser maior que zero.');
-    if (dados.quantidade <= 0) erros.push('A quantidade de volumes deve ser no mínimo 1.');
-    if (dados.pesoReal <= 0) erros.push('O peso real total deve ser maior que zero.');
-    if (dados.comprimento <= 0 || dados.largura <= 0 || dados.altura <= 0) {
-      erros.push('Informe dimensões válidas maiores que zero (comprimento, largura e altura).');
-    }
-    if (dados.tarifaKg <= 0) erros.push('A tarifa base por kg deve ser maior que zero.');
+    if (isNaN(dados.distancia) || dados.distancia <= 0) erros.push('Informe uma distância em km válida.');
+    if (isNaN(dados.valorNF) || dados.valorNF <= 0) erros.push('O valor da Nota Fiscal deve ser maior que zero.');
+    if (isNaN(dados.quantidade) || dados.quantidade <= 0) erros.push('A quantidade de volumes deve ser no mínimo 1.');
+    if (isNaN(dados.pesoReal) || dados.pesoReal <= 0) erros.push('O peso real da carga deve ser maior que zero.');
+    if (isNaN(dados.comprimento) || dados.comprimento <= 0) erros.push('Comprimento deve ser maior que zero.');
+    if (isNaN(dados.largura) || dados.largura <= 0) erros.push('Largura deve ser maior que zero.');
+    if (isNaN(dados.altura) || dados.altura <= 0) erros.push('Altura deve ser maior que zero.');
+    if (isNaN(dados.tarifaKg) || dados.tarifaKg <= 0) erros.push('A tarifa base por kg deve ser maior que zero.');
+
     return erros;
   }
 
   function exibirErrosValidacao(erros) {
-    if (!boxErros) return;
-    let html = '<strong>Por favor, corrija os seguintes itens para prosseguir:</strong><ul>';
-    erros.forEach(erro => html += `<li>${erro}</li>`);
+    let html = '<strong>Por favor, corrija os seguintes problemas para calcular:</strong><ul>';
+    erros.forEach(erro => {
+      html += `<li>${erro}</li>`;
+    });
     html += '</ul>';
     boxErros.innerHTML = html;
     boxErros.style.display = 'block';
   }
 
-  // Fórmulas SENAI
   function calcularCubagem(comprimento, largura, altura, quantidade) {
     const volumeUnitario = comprimento * largura * altura;
     const volumeTotal = volumeUnitario * quantidade;
@@ -156,15 +172,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function determinarPesoCobranca(pesoReal, pesoCubado) {
     if (pesoCubado > pesoReal) {
-      return { pesoCobranca: pesoCubado, criterio: 'PESO CUBADO (ocupação de espaço)' };
+      return {
+        pesoCobranca: pesoCubado,
+        criterio: 'PESO CUBADO (ocupação de espaço)'
+      };
     } else {
-      return { pesoCobranca: pesoReal, criterio: 'PESO REAL (peso físico)' };
+      return {
+        pesoCobranca: pesoReal,
+        criterio: 'PESO REAL (peso físico)'
+      };
     }
   }
 
-  function calcularFretePeso(pesoCobranca, tarifaKg, distancia, freteMinimo) {
-    const fatorDistancia = distancia > 0 ? (distancia / 100) : 1;
-    const fretePesoBruto = pesoCobranca * tarifaKg * fatorDistancia;
+  function calcularFretePeso(pesoCobranca, tarifaKg, freteMinimo) {
+    const fretePesoBruto = pesoCobranca * tarifaKg;
     let usouFreteMinimo = false;
     let freteAplicado = fretePesoBruto;
 
@@ -185,118 +206,56 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function formatarMoeda(valor) {
-    return (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
-
-  function setTxt(ids, texto) {
-    const el = findElement(ids);
-    if (el) el.textContent = texto;
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
   function exibirMemoriaDeCalculo(entradas, cubagem, analisePeso, freteCalculado, taxas, valorTotalFrete) {
-    setTxt(['res-cliente'], entradas.nomeCliente || '---');
-    setTxt(['res-rota'], `${entradas.cidadeOrigem || '---'} ➔ ${entradas.cidadeDestino || '---'}`);
-    setTxt(['res-distancia'], `${entradas.distancia} km`);
-    setTxt(['res-mercadoria'], `${entradas.descricaoCarga || '---'} (${entradas.quantidade} vol.)`);
-    setTxt(['res-valor-nf'], formatarMoeda(entradas.valorNF));
+    document.getElementById('res-cliente').textContent = entradas.nomeCliente;
+    document.getElementById('res-rota').textContent = `${entradas.cidadeOrigem} ➔ ${entradas.cidadeDestino}`;
+    document.getElementById('res-distancia').textContent = `${entradas.distancia} km`;
+    document.getElementById('res-mercadoria').textContent = `${entradas.descricaoCarga} (${entradas.quantidade} vol.)`;
+    document.getElementById('res-valor-nf').textContent = formatarMoeda(entradas.valorNF);
 
-    setTxt(['res-volume'], `${cubagem.volumeTotal.toFixed(3)} m³`);
-    setTxt(['res-peso-real'], `${entradas.pesoReal.toFixed(2)} kg`);
-    setTxt(['res-peso-cubado'], `${cubagem.pesoCubado.toFixed(2)} kg`);
-    setTxt(['res-peso-cobranca'], `${analisePeso.pesoCobranca.toFixed(2)} kg`);
+    document.getElementById('res-volume').textContent = `${cubagem.volumeTotal.toFixed(3)} m³`;
+    document.getElementById('res-peso-real').textContent = `${entradas.pesoReal.toFixed(2)} kg`;
+    document.getElementById('res-peso-cubado').textContent = `${cubagem.pesoCubado.toFixed(2)} kg`;
+    document.getElementById('res-peso-cobrança').textContent = `${analisePeso.pesoCobranca.toFixed(2)} kg`;
+    document.getElementById('res-criterio-peso').textContent = `Critério Aplicado: ${analisePeso.criterio}`;
 
-    setTxt(['res-criterio-peso'], analisePeso.criterio);
-
-    setTxt(['res-frete-peso'], formatarMoeda(freteCalculado.fretePesoBruto));
-    setTxt(['res-frete-minimo-aplicado'], freteCalculado.usouFreteMinimo ? `Sim (${formatarMoeda(freteCalculado.freteAplicado)})` : 'Não');
+    document.getElementById('res-frete-peso').textContent = formatarMoeda(freteCalculado.fretePesoBruto);
+    document.getElementById('res-frete-minimo-aplicado').textContent = freteCalculado.usouFreteMinimo ? `Sim (${formatarMoeda(freteCalculado.freteAplicado)})` : 'Não';
     
-    setTxt(['res-advalorem'], formatarMoeda(taxas.valorAdValorem));
-    setTxt(['res-gris'], formatarMoeda(taxas.valorGris));
-    setTxt(['res-pedagio'], formatarMoeda(taxas.pedagio));
-    setTxt(['res-outras-taxas'], formatarMoeda(taxas.outrasTaxas));
+    document.getElementById('res-advalorem').textContent = formatarMoeda(taxas.valorAdValorem);
+    document.getElementById('res-gris').textContent = formatarMoeda(taxas.valorGris);
+    document.getElementById('res-pedagio').textContent = formatarMoeda(taxas.pedagio);
+    document.getElementById('res-outras-taxas').textContent = formatarMoeda(taxas.outrasTaxas);
 
-    setTxt(['res-total-frete'], formatarMoeda(valorTotalFrete));
-  }
-
-  // GPS Opcional (Não trava caso não seja usado)
-  async function buscarDistanciaGPS() {
-    const orig = getTexto(['cidade-origem']);
-    const dest = getTexto(['cidade-destino']);
-    const inputDist = findElement(['distancia']);
-
-    if (!orig || !dest) {
-      if (statusDistancia) {
-        statusDistancia.textContent = "⚠️ Informe origem e destino primeiro.";
-        statusDistancia.style.color = "#c62828";
-      }
-      return;
-    }
-
-    if (statusDistancia) {
-      statusDistancia.textContent = "⌛ Consultando GPS...";
-      statusDistancia.style.color = "#0b2545";
-    }
-
-    try {
-      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(orig)}&count=1&language=pt&format=json`);
-      const dataOrig = await res.json();
-      const resDest = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(dest)}&count=1&language=pt&format=json`);
-      const dataDest = await resDest.json();
-
-      if (dataOrig.results && dataDest.results) {
-        const lat1 = dataOrig.results[0].latitude;
-        const lon1 = dataOrig.results[0].longitude;
-        const lat2 = dataDest.results[0].latitude;
-        const lon2 = dataDest.results[0].longitude;
-
-        const resOSRM = await fetch(`https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`);
-        const dataOSRM = await resOSRM.json();
-
-        if (dataOSRM.routes && dataOSRM.routes.length > 0) {
-          const km = (dataOSRM.routes[0].distance / 1000).toFixed(1);
-          if (inputDist) inputDist.value = km;
-          if (statusDistancia) {
-            statusDistancia.textContent = "✔ Distância obtida via GPS";
-            statusDistancia.style.color = "#2e7d32";
-          }
-          executarCalculo(false);
-          return;
-        }
-      }
-      throw new Error("Rota não encontrada");
-    } catch (e) {
-      if (statusDistancia) {
-        statusDistancia.textContent = "❌ Não foi possível buscar o GPS. Digite os km manualmente.";
-        statusDistancia.style.color = "#c62828";
-      }
-    }
+    document.getElementById('res-total-frete').textContent = formatarMoeda(valorTotalFrete);
   }
 
   function limparFormulario() {
-    const form = findElement(['frete-form']);
-    if (form) form.reset();
-    if (statusDistancia) statusDistancia.textContent = '';
-    if (boxErros) boxErros.style.display = 'none';
+    document.getElementById('frete-form').reset();
+    statusDistancia.textContent = '';
+    boxErros.style.display = 'none';
 
-    setTxt(['res-cliente'], '---');
-    setTxt(['res-rota'], '---');
-    setTxt(['res-distancia'], '0 km');
-    setTxt(['res-mercadoria'], '---');
-    setTxt(['res-valor-nf'], 'R$ 0,00');
+    document.getElementById('res-cliente').textContent = '---';
+    document.getElementById('res-rota').textContent = '---';
+    document.getElementById('res-distancia').textContent = '0 km';
+    document.getElementById('res-mercadoria').textContent = '---';
+    document.getElementById('res-valor-nf').textContent = 'R$ 0,00';
 
-    setTxt(['res-volume'], '0,000 m³');
-    setTxt(['res-peso-real'], '0,00 kg');
-    setTxt(['res-peso-cubado'], '0,00 kg');
-    setTxt(['res-peso-cobranca'], '0,00 kg');
+    document.getElementById('res-volume').textContent = '0,000 m³';
+    document.getElementById('res-peso-real').textContent = '0,00 kg';
+    document.getElementById('res-peso-cubado').textContent = '0,00 kg';
+    document.getElementById('res-peso-cobrança').textContent = '0,00 kg';
+    document.getElementById('res-criterio-peso').textContent = 'Critério: Aguardando dados';
 
-    setTxt(['res-criterio-peso'], 'Aguardando dados...');
-
-    setTxt(['res-frete-peso'], 'R$ 0,00');
-    setTxt(['res-frete-minimo-aplicado'], 'Não');
-    setTxt(['res-advalorem'], 'R$ 0,00');
-    setTxt(['res-gris'], 'R$ 0,00');
-    setTxt(['res-pedagio'], 'R$ 0,00');
-    setTxt(['res-outras-taxas'], 'R$ 0,00');
-    setTxt(['res-total-frete'], 'R$ 0,00');
+    document.getElementById('res-frete-peso').textContent = 'R$ 0,00';
+    document.getElementById('res-frete-minimo-aplicado').textContent = 'Não';
+    document.getElementById('res-advalorem').textContent = 'R$ 0,00';
+    document.getElementById('res-gris').textContent = 'R$ 0,00';
+    document.getElementById('res-pedagio').textContent = 'R$ 0,00';
+    document.getElementById('res-outras-taxas').textContent = 'R$ 0,00';
+    document.getElementById('res-total-frete').textContent = 'R$ 0,00';
   }
 });
