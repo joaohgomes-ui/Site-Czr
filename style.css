@@ -125,7 +125,7 @@ label {
   color: var(--label-color);
 }
 
-input {
+input, select {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--border-color);
@@ -135,7 +135,7 @@ input {
   font-size: 0.9rem;
 }
 
-input:focus {
+input:focus, select:focus {
   outline: none;
   border-color: var(--primary-color);
 }
@@ -165,16 +165,6 @@ button {
   background-color: var(--accent-hover);
 }
 
-.btn-info {
-  background-color: #134074;
-  color: white;
-  margin-top: 4px;
-}
-
-.btn-info:hover {
-  background-color: #0b2545;
-}
-
 .btn-danger {
   background-color: #d32f2f;
   color: white;
@@ -190,13 +180,6 @@ button {
   color: var(--text-color);
   padding: 6px 12px;
   border-radius: 15px;
-}
-
-#status-distancia {
-  font-size: 0.75rem;
-  color: #1b5e20;
-  font-weight: normal;
-  margin-left: 5px;
 }
 
 .alert-box-error {
